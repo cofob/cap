@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import { transform } from "lightningcss";
 import { chromium } from "playwright";
 import { minify } from "terser";
+import { extractCaptchaDesignSystemCss } from "./extract-design-system-css.js";
 import {
   keys,
   shipped,
@@ -48,11 +49,20 @@ const minifyJS = async (input) => {
 console.time("build");
 
 const rawMain = await fs.readFile("./src/src/cap.js", "utf-8");
-const rawCSS = await fs.readFile("./src/src/cap.css", "utf-8");
+const adapterCSS = await fs.readFile("./src/src/cap.css", "utf-8");
+const {
+  css: rawCSS,
+  packageVersion: designSystemVersion,
+  referencedTokens,
+} = await extractCaptchaDesignSystemCss(adapterCSS);
 const minifiedWorker = await minifyJS(
   await fs.readFile("./src/src/worker.js", "utf-8"),
 );
 const minifiedCSS = minifyCSS(rawCSS);
+
+console.log(
+  `design system: @cofob/design-system-css@${designSystemVersion}, ${referencedTokens.length} tokens, ${minifiedCSS.length}B CSS`,
+);
 
 const keepIdx = shippedKeys.map((k) => {
   const i = keys.indexOf(k);
@@ -65,7 +75,8 @@ for (const code of shipped) {
     throw new Error(`shipped lang '${code}' missing from translations`);
   const vals = keepIdx.map((i) => translations[code][i]);
   const bad = vals.find((v) => v.includes("/"));
-  if (bad) throw new Error(`'${code}' string contains the "/" delimiter: ${bad}`);
+  if (bad)
+    throw new Error(`'${code}' string contains the "/" delimiter: ${bad}`);
   i18nRows[code] = vals.join("/");
 }
 const i18nJSON = JSON.stringify(i18nRows);
@@ -88,6 +99,10 @@ await fs.writeFile(
 );
 
 console.timeEnd("build");
+
+if (process.argv.includes("--build-only")) {
+  process.exit(0);
+}
 
 console.time("test");
 

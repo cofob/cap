@@ -2,13 +2,16 @@
   "name": "widget",
   "private": true,
   "scripts": {
-    "test": "bun test test/unit.test.js && bun test test/e2e.test.js && bun test test/e2e-instrumentation.test.js && bun test test/e2e-regression.test.js && bun test test/e2e-worker.test.js",
-    "test:unit": "bun test test/unit.test.js",
+    "build": "bun build.js --build-only",
+    "test": "bun test test/unit.test.js test/design-system-css.test.js && bun test test/e2e.test.js && bun test test/e2e-instrumentation.test.js && bun test test/e2e-regression.test.js && bun test test/e2e-worker.test.js",
+    "test:unit": "bun test test/unit.test.js test/design-system-css.test.js",
     "test:e2e": "bun test test/e2e.test.js && bun test test/e2e-instrumentation.test.js && bun test test/e2e-regression.test.js && bun test test/e2e-worker.test.js"
   },
   "dependencies": {
+    "@cofob/design-system-css": "0.1.0",
     "lightningcss": "^1.31.1",
     "playwright": "^1.52.0",
+    "postcss": "^8.5.6",
     "terser": "^5.43.1"
   },
   "devDependencies": {

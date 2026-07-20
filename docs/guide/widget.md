@@ -314,26 +314,32 @@ All widget labels can be overridden with `data-cap-i18n-*` attributes. These def
 
 ### Styling
 
-Override any of these CSS variables on the `cap-widget` element:
+The widget uses the [`@cofob/design-system-css`](https://github.com/cofob/design-system/pkgs/npm/design-system-css)
+Captcha component. It embeds the component's required styles and fallback tokens
+inside its shadow root, so the host page does not need to load the design-system
+stylesheet.
+
+Override the semantic `--cf-*` tokens on `cap-widget` to customize it:
 
 ```css
 cap-widget {
-  --cap-background: #fdfdfd;
-  --cap-border-color: #dddddd8f;
-  --cap-border-radius: 14px;
-  --cap-widget-height: 30px;
-  --cap-widget-width: 230px;
-  --cap-widget-padding: 14px;
-  --cap-gap: 15px;
-  --cap-color: #212121;
-  --cap-checkbox-size: 25px;
-  --cap-checkbox-border: 1px solid #aaaaaad1;
-  --cap-checkbox-border-radius: 6px;
-  --cap-checkbox-background: #fafafa91;
-  --cap-checkbox-margin: 2px;
-  --cap-font: system-ui, -apple-system, sans-serif;
-  --cap-spinner-color: #000;
-  --cap-spinner-background-color: #eee;
-  --cap-spinner-thickness: 5px;
+  --cf-color-accent: #7c3aed;
+  --cf-color-accent-soft: #ede9fe;
+  --cf-color-surface-raised: #ffffff;
+  --cf-color-text-strong: #18181b;
+  --cf-color-border: #e4e4e7;
+  --cf-color-focus: #7c3aed;
+  --cf-radius-xl: 0.75rem;
+  --cf-shadow-sm: 0 1px 3px rgb(0 0 0 / 10%);
 }
 ```
+
+Without overrides, the widget follows `data-theme="light|dark"` on itself or an
+ancestor and otherwise uses `prefers-color-scheme`. Design-system tokens already
+defined by the host page take precedence over the embedded fallbacks. Manrope is
+used when the page provides it; otherwise the design-system system-font fallback
+is used.
+
+> [!WARNING]
+> The former `--cap-*` variables and widget `::part(...)` styling hooks are no
+> longer supported. Migrate custom themes to semantic `--cf-*` tokens.

@@ -92,7 +92,7 @@ description: "Try Cap live: a working demo of the open-source, self-hosted CAPTC
   </div>
 </div>
 
-<div style="margin-bottom: 1rem;--cap-widget-width:300px;">
+<div style="margin-bottom: 1rem;inline-size:300px;">
   <Demo />
 </div>
 

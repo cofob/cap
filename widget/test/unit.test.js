@@ -21,9 +21,7 @@ describe("widget source structure", () => {
   });
 
   test("instrumentation message handler validates ev.source against iframe.contentWindow", () => {
-    expect(widgetSource).toMatch(
-      /ev\.source !== iframe\.contentWindow/,
-    );
+    expect(widgetSource).toMatch(/ev\.source !== iframe\.contentWindow/);
   });
 
   test("speculative-solve trigger threshold matches expected value", () => {
@@ -42,6 +40,20 @@ describe("widget source structure", () => {
 
   test("registers Cap as a custom element", () => {
     expect(widgetSource).toMatch(/customElements\.define\(["']cap-widget["']/);
+  });
+
+  test("renders the cofob design-system captcha as a native button", () => {
+    expect(widgetSource).toMatch(/document\.createElement\("button"\)/);
+    expect(widgetSource).toMatch(/className = "cf-captcha"/);
+    expect(widgetSource).toContain("cf-captcha__progress-value");
+    expect(widgetSource).not.toMatch(/setAttribute\("part"/);
+  });
+
+  test("keeps determinate progress on the design-system ring", () => {
+    expect(widgetSource).toMatch(/2 \* Math\.PI \* 12/);
+    expect(widgetSource).toMatch(
+      /Math\.min\(100, Math\.max\(0, rawProgress\)\)/,
+    );
   });
 });
 

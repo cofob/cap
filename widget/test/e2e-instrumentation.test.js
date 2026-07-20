@@ -95,10 +95,15 @@ if (!SHOULD_RUN_E2E) {
   }, 120_000);
 
   afterAll(async () => {
-    if (page) await page.close();
+    if (page && !page.isClosed()) {
+      await page
+        .evaluate(() => document.querySelector("cap-widget")?.remove())
+        .catch(() => {});
+      await page.close();
+    }
     if (browser) await browser.close();
     if (server) server.stop(true);
-  });
+  }, 30_000);
 
   describe("widget e2e with instrumentation", () => {
     test("instrumentation iframe runs and produces a token or documented error", async () => {
@@ -107,7 +112,7 @@ if (!SHOULD_RUN_E2E) {
         () =>
           document
             .getElementById("cap")
-            ?.shadowRoot?.querySelector?.(".captcha-trigger"),
+            ?.shadowRoot?.querySelector?.(".cf-captcha"),
         null,
         { timeout: 10_000 },
       );
@@ -147,7 +152,7 @@ if (!SHOULD_RUN_E2E) {
         () =>
           document
             .getElementById("cap")
-            ?.shadowRoot?.querySelector?.(".captcha-trigger"),
+            ?.shadowRoot?.querySelector?.(".cf-captcha"),
         null,
         { timeout: 10_000 },
       );

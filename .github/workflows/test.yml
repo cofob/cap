@@ -41,6 +41,9 @@ jobs:
   widget:
     name: cap-widget
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -52,12 +55,20 @@ jobs:
       - name: Install (widget)
         working-directory: widget
         run: bun install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build widget
+        working-directory: widget
+        run: bun run build
+      - name: Verify generated widget assets
+        working-directory: widget
+        run: git diff --exit-code -- src/cap.min.js src/cap-floating.min.js
       - name: Install Playwright browsers
         working-directory: widget
         run: bunx playwright install --with-deps chromium
       - name: Run unit tests
         working-directory: widget
-        run: bun test test/unit.test.js
+        run: bun run test:unit
       - name: Run e2e (basic)
         working-directory: widget
         run: bun test test/e2e.test.js

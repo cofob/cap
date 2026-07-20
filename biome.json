@@ -6,6 +6,7 @@
       "core/test/**",
       "widget/src/src/**",
       "widget/build.js",
+      "widget/extract-design-system-css.js",
       "widget/test/**",
       "wasm/build.js",
       "wasm/test/**",

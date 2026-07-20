@@ -114,10 +114,10 @@ if (!SHOULD_RUN_E2E) {
         () =>
           document
             .getElementById("a")
-            ?.shadowRoot?.querySelector?.(".captcha-trigger") &&
+            ?.shadowRoot?.querySelector?.(".cf-captcha") &&
           document
             .getElementById("b")
-            ?.shadowRoot?.querySelector?.(".captcha-trigger"),
+            ?.shadowRoot?.querySelector?.(".cf-captcha"),
         null,
         { timeout: 10_000 },
       );
@@ -149,7 +149,7 @@ if (!SHOULD_RUN_E2E) {
         () =>
           document
             .getElementById("cap")
-            ?.shadowRoot?.querySelector?.(".captcha-trigger"),
+            ?.shadowRoot?.querySelector?.(".cf-captcha"),
         null,
         { timeout: 10_000 },
       );

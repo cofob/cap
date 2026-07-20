@@ -274,9 +274,6 @@
     getWasmModule().catch(() => {});
   }
 
-  const prefersReducedMotion = () =>
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-
   const SPECULATIVE_DELAY_MS = 2500;
   const SPECULATIVE_WORKERS = 1;
   const SPECULATIVE_YIELD_MS = 120;
@@ -783,7 +780,11 @@
         "onreset",
         "onerror",
         "data-cap-worker-count",
+        "data-cap-lang",
         "data-cap-i18n-initial-state",
+        "data-cap-i18n-verifying-label",
+        "data-cap-i18n-solved-label",
+        "data-cap-i18n-error-label",
         "required",
       ];
     }
@@ -813,7 +814,7 @@
         this.#internals.setValidity(
           { valueMissing: true },
           this.getI18nText("required-label", "Please verify you're human"),
-          this.#div || this,
+          this.#trigger || this,
         );
       } else {
         this.#internals.setValidity({});
@@ -856,14 +857,39 @@
         this.setWorkersCount(parseInt(value, 10));
       }
 
-      if (
-        name === "data-cap-i18n-initial-state" &&
-        this.#div &&
-        this.#div?.querySelector(".label.active")
-      ) {
-        this.animateLabel(
-          this.getI18nText("initial-state", "Verify you're human"),
-        );
+      const visualLabelAttributes = {
+        "data-cap-i18n-initial-state": [
+          "idle",
+          "initial-state",
+          "Verify you're human",
+        ],
+        "data-cap-i18n-verifying-label": [
+          "verifying",
+          "verifying-label",
+          "Verifying...",
+        ],
+        "data-cap-i18n-solved-label": [
+          "success",
+          "solved-label",
+          "You're a human",
+        ],
+        "data-cap-i18n-error-label": [
+          "error",
+          "error-label",
+          "Error. Try again.",
+        ],
+      };
+
+      if (name === "data-cap-lang") {
+        this.#resolveI18n();
+        for (const [state, key, fallback] of Object.values(
+          visualLabelAttributes,
+        )) {
+          this.#setVisualLabel(state, this.getI18nText(key, fallback));
+        }
+      } else if (visualLabelAttributes[name]) {
+        const [state, key, fallback] = visualLabelAttributes[name];
+        this.#setVisualLabel(state, this.getI18nText(key, fallback));
       }
 
       if (name === "required") {
@@ -885,7 +911,8 @@
       this.createUI();
       this.addEventListeners();
       this.initialize();
-      this.#trigger.removeAttribute("disabled");
+      this.#trigger.disabled = false;
+      delete this.#trigger.dataset.disabled;
 
       const workers = this.getAttribute("data-cap-worker-count");
       const parsedWorkers = workers ? parseInt(workers, 10) : null;
@@ -900,16 +927,16 @@
     }
 
     #handleInvalid = () => {
-      if (!this.#div) return;
+      if (!this.#trigger) return;
       try {
         this.scrollIntoView({ behavior: "smooth", block: "center" });
       } catch {
         this.scrollIntoView();
       }
-      this.#div.classList.remove("invalid");
-      void this.#div.offsetWidth;
-      this.#div.classList.add("invalid");
-      setTimeout(() => this.#div?.classList.remove("invalid"), 1500);
+      this.#trigger.classList.remove("invalid");
+      void this.#trigger.offsetWidth;
+      this.#trigger.classList.add("invalid");
+      setTimeout(() => this.#trigger?.classList.remove("invalid"), 1500);
     };
 
     async solve() {
@@ -1324,19 +1351,17 @@
 
       if (!wasmSupported) {
         log.warn(T("wasm"), "WebAssembly disabled in this browser, solver will be ~10x slower");
-        if (!this.#shadow.querySelector(".warning")) {
+        if (!this.#shadow.querySelector(".cap-wasm-warning")) {
           const warningEl = document.createElement("div");
-          warningEl.className = "warning";
-          warningEl.style.cssText = `width:var(--cap-widget-width,230px);background:rgb(237,56,46);color:white;padding:4px 6px;padding-bottom:calc(var(--cap-border-radius,14px) + 5px);font-size:10px;box-sizing:border-box;font-family:system-ui;border-top-left-radius:8px;border-top-right-radius:8px;text-align:center;user-select:none;margin-bottom:-35.5px;opacity:0;transition:margin-bottom .3s,opacity .3s;`;
-          warningEl.innerText = this.getI18nText(
+          warningEl.className = "cap-wasm-warning";
+          warningEl.textContent = this.getI18nText(
             "wasm-disabled",
             "Enable WASM for significantly faster solving",
           );
-          this.#shadow.insertBefore(warningEl, this.#shadow.firstChild);
-          setTimeout(() => {
-            warningEl.style.marginBottom = `calc(-1 * var(--cap-border-radius, 14px))`;
-            warningEl.style.opacity = 1;
-          }, 10);
+          this.#shadow.insertBefore(warningEl, this.#div);
+          requestAnimationFrame(() => {
+            warningEl.dataset.visible = "true";
+          });
         }
       }
 
@@ -1385,33 +1410,40 @@
     }
 
     createUI() {
-      this.#div.classList.add("captcha");
+      this.#div.replaceChildren();
+      this.#div.className = "cap-widget-shell";
       this.#div.setAttribute("role", "group");
       this.#div.setAttribute(
         "aria-label",
         this.getI18nText("group-aria-label", "Cap verification"),
       );
 
-      this.#trigger = document.createElement("div");
-      this.#trigger.className = "captcha-trigger";
-      this.#trigger.setAttribute("part", "trigger");
-      this.#trigger.setAttribute("role", "button");
-      this.#trigger.setAttribute("tabindex", "0");
+      this.#trigger = document.createElement("button");
+      this.#trigger.type = "button";
+      this.#trigger.className = "cf-captcha";
+      this.#trigger.dataset.state = "idle";
       this.#trigger.setAttribute(
         "aria-label",
         this.getI18nText("verify-aria-label", "Click to verify you're a human"),
       );
-      this.#trigger.setAttribute("aria-live", "polite");
-      this.#trigger.setAttribute("disabled", "true");
-      this.#trigger.innerHTML = `<div class="checkbox" part="checkbox" aria-hidden="true"><svg class="progress-ring" viewBox="0 0 32 32" aria-hidden="true"><circle class="progress-ring-bg" cx="16" cy="16" r="14"></circle><circle class="progress-ring-circle" cx="16" cy="16" r="14"></circle></svg></div><p part="label" class="label-wrapper"><span class="label active">${this.getI18nText(
-        "initial-state",
-        "Verify you're human",
-      )}</span></p>`;
+      this.#trigger.disabled = true;
+      this.#trigger.dataset.disabled = "true";
+      this.#trigger.innerHTML = `<span class="cf-captcha__indicator" aria-hidden="true"><svg class="cf-captcha__progress" viewBox="0 0 32 32"><circle class="cf-captcha__progress-track" cx="16" cy="16" r="12"></circle><circle class="cf-captcha__progress-value" cx="16" cy="16" r="12"></circle></svg><svg class="cf-captcha__status cf-captcha__status--success" viewBox="0 0 24 24"><path pathLength="1" d="m5 12 4.5 4.5L19 7"></path></svg><svg class="cf-captcha__status cf-captcha__status--error" viewBox="0 0 24 24"><path pathLength="1" d="M7 7l10 10M17 7 7 17"></path></svg></span><span class="cf-captcha__copy" aria-hidden="true"><span class="cf-captcha__label" data-captcha-label="idle"></span><span class="cf-captcha__label" data-captcha-label="verifying"></span><span class="cf-captcha__label" data-captcha-label="success"></span><span class="cf-captcha__label" data-captcha-label="error"></span></span><span class="cf-visually-hidden" aria-live="polite" aria-atomic="true"></span>`;
+
+      const labels = {
+        idle: this.getI18nText("initial-state", "Verify you're human"),
+        verifying: this.getI18nText("verifying-label", "Verifying..."),
+        success: this.getI18nText("solved-label", "You're a human"),
+        error: this.getI18nText("error-label", "Error. Try again."),
+      };
+      for (const [state, label] of Object.entries(labels)) {
+        this.#setVisualLabel(state, label);
+      }
+      this.#trigger.querySelector(".cf-visually-hidden").textContent = labels.idle;
       this.#div.appendChild(this.#trigger);
 
       this.#troubleshootLink = document.createElement("a");
       this.#troubleshootLink.className = "cap-troubleshoot-link";
-      this.#troubleshootLink.setAttribute("part", "troubleshoot");
       this.#troubleshootLink.setAttribute("target", "_blank");
       this.#troubleshootLink.setAttribute("rel", "noopener");
       this.#troubleshootLink.hidden = true;
@@ -1462,23 +1494,20 @@
       });
 
       this.#trigger.addEventListener("click", () => {
-        if (!this.#trigger.hasAttribute("disabled")) this.solve();
-      });
-      this.#trigger.addEventListener("mousedown", () => {
-        if (!this.#trigger.hasAttribute("disabled") && this.#hasHaptics) {
-          navigator.vibrate(5);
+        if (
+          !this.#trigger.disabled &&
+          this.#trigger.getAttribute("aria-disabled") !== "true"
+        ) {
+          this.solve();
         }
       });
-
-      this.#trigger.addEventListener("keydown", (e) => {
-        if (e.target !== this.#trigger) return;
+      this.#trigger.addEventListener("mousedown", () => {
         if (
-          (e.key === "Enter" || e.key === " ") &&
-          !this.#trigger.hasAttribute("disabled")
+          !this.#trigger.disabled &&
+          this.#trigger.getAttribute("aria-disabled") !== "true" &&
+          this.#hasHaptics
         ) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.solve();
+          navigator.vibrate(5);
         }
       });
 
@@ -1513,7 +1542,7 @@
         "visibility: visible !important",
         "opacity: 0.8 !important",
         "pointer-events: all !important",
-        "font-size: 12px !important",
+        "font-size: var(--cf-font-size-xs) !important",
         "transform: none !important",
         "clip-path: none !important",
         "filter: none !important",
@@ -1521,67 +1550,74 @@
       ].join("; ");
     }
 
-    animateLabel(text) {
+    #setVisualLabel(state, text) {
       if (!this.#trigger) return;
-      const wrapper = this.#trigger.querySelector(".label-wrapper");
-      if (!wrapper) return;
-
-      if (prefersReducedMotion()) {
-        const current = wrapper.querySelector(".label.active");
-        if (current) {
-          current.textContent = text;
-        } else {
-          const span = document.createElement("span");
-          span.className = "label active";
-          span.textContent = text;
-          wrapper.appendChild(span);
-        }
-        return;
-      }
-
-      const current = wrapper.querySelector(".label.active");
-
-      const next = document.createElement("span");
-      next.className = "label";
-      next.textContent = text;
-      wrapper.appendChild(next);
-
-      void next.offsetWidth;
-
-      next.classList.add("active");
-      if (current) {
-        current.classList.remove("active");
-        current.classList.add("exit");
-        current.addEventListener("transitionend", () => current.remove(), {
-          once: true,
-        });
+      const label = this.#trigger.querySelector(
+        `[data-captcha-label="${state}"]`,
+      );
+      if (label) label.textContent = text;
+      if (this.#trigger.dataset.state === state) {
+        const status = this.#trigger.querySelector(".cf-visually-hidden");
+        if (status) status.textContent = text;
       }
     }
 
-    updateUI(state, text, disabled = false) {
+    updateUI(state, text, locked = false) {
       if (!this.#div || !this.#trigger) return;
 
-      this.#div.setAttribute("data-state", state);
+      const visualState = ["idle", "verifying", "success", "error"].includes(
+        state,
+      )
+        ? state
+        : "idle";
+
+      this.#setVisualLabel(visualState, text);
+      this.#trigger.dataset.state = visualState;
       this.#div.classList.remove("has-troubleshoot");
-
-      this.animateLabel(text);
-
       if (this.#troubleshootLink) this.#troubleshootLink.hidden = true;
 
-      if (disabled) {
-        this.#trigger.setAttribute("disabled", "true");
+      this.#trigger.disabled = false;
+      delete this.#trigger.dataset.disabled;
+      if (locked) {
+        this.#trigger.setAttribute("aria-disabled", "true");
       } else {
-        this.#trigger.removeAttribute("disabled");
+        this.#trigger.removeAttribute("aria-disabled");
       }
+
+      if (visualState === "verifying") {
+        this.#trigger.setAttribute("aria-busy", "true");
+      } else {
+        this.#trigger.removeAttribute("aria-busy");
+      }
+
+      const ariaLabels = {
+        idle: this.getI18nText(
+          "verify-aria-label",
+          "Click to verify you're a human",
+        ),
+        verifying: this.getI18nText(
+          "verifying-aria-label",
+          "Verifying you're a human, please wait",
+        ),
+        success: this.getI18nText(
+          "verified-aria-label",
+          "We have verified you're a human, you may now continue",
+        ),
+        error: this.getI18nText(
+          "error-aria-label",
+          "An error occurred, please try again",
+        ),
+      };
+      this.#trigger.setAttribute("aria-label", ariaLabels[visualState]);
+
+      const status = this.#trigger.querySelector(".cf-visually-hidden");
+      if (status) status.textContent = text;
     }
 
     updateUIBlocked(label, showTroubleshooting = false) {
       if (!this.#div || !this.#trigger) return;
 
-      this.#div.setAttribute("data-state", "error");
-      this.#trigger.removeAttribute("disabled");
-
-      this.animateLabel(label);
+      this.updateUI("error", label);
 
       if (this.#troubleshootLink) {
         if (showTroubleshooting) {
@@ -1606,22 +1642,17 @@
       if (!this.#trigger) return;
 
       const progressCircle = this.#trigger.querySelector(
-        ".progress-ring-circle",
+        ".cf-captcha__progress-value",
       );
 
       if (progressCircle) {
-        const circumference = 2 * Math.PI * 14;
-        const offset =
-          circumference - (event.detail.progress / 100) * circumference;
-        progressCircle.style.strokeDashoffset = offset;
-      }
-
-      const wrapper = this.#trigger.querySelector(".label-wrapper");
-      if (wrapper) {
-        const activeLabel = wrapper.querySelector(".label.active");
-        if (activeLabel) {
-          activeLabel.textContent = `${this.getI18nText("verifying-label", "Verifying...")}`;
-        }
+        const rawProgress = Number(event.detail.progress);
+        const progress = Number.isFinite(rawProgress)
+          ? Math.min(100, Math.max(0, rawProgress))
+          : 0;
+        const circumference = 2 * Math.PI * 12;
+        const offset = (1 - progress / 100) * circumference;
+        progressCircle.style.strokeDashoffset = String(offset);
       }
 
       this.executeAttributeCode("onprogress", event);
@@ -1629,13 +1660,13 @@
 
     handleSolve(event) {
       this.updateUI(
-        "done",
+        "success",
         this.getI18nText("solved-label", "You're a human"),
         true,
       );
       this.executeAttributeCode("onsolve", event);
       this.#internals?.setValidity?.({});
-      this.#div?.classList.remove("invalid");
+      this.#trigger?.classList.remove("invalid");
     }
 
     handleError(event) {
@@ -1649,7 +1680,10 @@
     }
 
     handleReset(event) {
-      this.updateUI("", this.getI18nText("initial-state", "I'm a human"));
+      this.updateUI(
+        "idle",
+        this.getI18nText("initial-state", "Verify you're human"),
+      );
       this.executeAttributeCode("onreset", event);
       this.#updateValidity();
     }
