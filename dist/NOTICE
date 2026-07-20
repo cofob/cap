@@ -1,0 +1,15 @@
+cofob design-system CAPTCHA styles
+==================================
+
+The Cap widget includes the CAPTCHA presentation contract extracted at build
+time from @cofob/design-system-css version 0.1.0.
+
+Copyright © 2021-present cofob (Egor Ternovoi).
+
+The copyright holder grants the CAPTCHA styles embedded in the Cap widget for
+use, modification, reproduction, sublicensing, and distribution under the
+Apache License, Version 2.0, including commercial use. This grant applies only
+to the design-system styles distributed as part of the Cap widget and does not
+relicense other @cofob/design-system-css materials.
+
+Source: https://github.com/cofob/design-system

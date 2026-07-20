@@ -50,6 +50,8 @@ web_modules/
 out
 .nuxt
 dist
+!/dist/
+!/dist/**
 .cache/
 .vuepress/dist
 .temp
