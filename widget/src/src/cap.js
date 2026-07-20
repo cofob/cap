@@ -429,7 +429,6 @@
     #shadow;
     #div;
     #trigger;
-    #credits;
     #troubleshootLink;
     #host;
     #solving = false;
@@ -944,7 +943,6 @@
         return;
       }
 
-      this.#enforceCredits();
       const _solveT0 = performance.now();
       const signal = this.#abort?.signal;
       log.debug(T("solve"), "starting");
@@ -1449,49 +1447,13 @@
       this.#troubleshootLink.hidden = true;
       this.#div.appendChild(this.#troubleshootLink);
 
-      this.#credits = document.createElement("a");
-      this.#credits.className = "credits";
-      this.#credits.setAttribute("aria-label", "Secured by Cap");
-      this.#credits.setAttribute("href", "https://trycap.dev");
-      this.#credits.setAttribute("target", "_blank");
-      this.#credits.setAttribute(
-        "title",
-        "Secured by Cap: The self-hosted CAPTCHA for the modern web.",
-      );
-      this.#credits.textContent = "Cap";
-      this.#div.appendChild(this.#credits);
-
       this.#shadow.innerHTML = `<style${window.CAP_CSS_NONCE ? ` nonce=${window.CAP_CSS_NONCE}` : ""}>%%capCSS%%</style>`;
 
       this.#shadow.appendChild(this.#div);
-
-      this.#enforceCredits();
-      setTimeout(() => this.#enforceCredits(), 100);
     }
 
     addEventListeners() {
       if (!this.#trigger) return;
-
-      this.#credits.addEventListener("click", (e) => {
-        e.preventDefault();
-        window.open(
-          `https://trycap.dev/?${new URLSearchParams(
-            // this attribution is only for our plausible analytics
-            // instance. no personal data is collected.
-            {
-              utm_source: "cap_widget",
-              utm_medium: "referral",
-              utm_campaign: "widget",
-              utm_content: window.CAP_DISABLE_WIDGET_REF
-                ? ""
-                : location.hostname,
-              ref: window.CAP_DISABLE_WIDGET_REF ? "" : location.href || "",
-              sub: window.CAP_DISABLE_WIDGET_REF ? "" : document.referrer || "",
-            },
-          ).toString()}`,
-          "_blank",
-        );
-      });
 
       this.#trigger.addEventListener("click", () => {
         if (
@@ -1515,39 +1477,6 @@
       this.addEventListener("solve", this.boundHandleSolve);
       this.addEventListener("error", this.boundHandleError);
       this.addEventListener("reset", this.boundHandleReset);
-    }
-
-    #hostIsHidden() {
-      if (!this.#host) return false;
-      const rect = this.#host.getBoundingClientRect();
-      if (rect.width === 0 && rect.height === 0) return true;
-      const cs = window.getComputedStyle(this.#host);
-      if (cs.display === "none" || cs.visibility === "hidden") return true;
-      return false;
-    }
-
-    #enforceCredits() {
-      if (!this.#credits || !this.#div || this.#hostIsHidden()) return;
-      if (!this.#credits.isConnected || this.#credits.parentNode !== this.#div) {
-        this.#div.appendChild(this.#credits);
-      }
-      if (!this.#credits.textContent || !this.#credits.textContent.trim()) {
-        this.#credits.textContent = "Cap";
-      }
-      if (this.#credits.getAttribute("href") !== "https://trycap.dev") {
-        this.#credits.setAttribute("href", "https://trycap.dev");
-      }
-      this.#credits.style.cssText = [
-        "display: inline-flex !important",
-        "visibility: visible !important",
-        "opacity: 0.8 !important",
-        "pointer-events: all !important",
-        "font-size: var(--cf-font-size-xs) !important",
-        "transform: none !important",
-        "clip-path: none !important",
-        "filter: none !important",
-        "position: absolute !important",
-      ].join("; ");
     }
 
     #setVisualLabel(state, text) {

@@ -40,18 +40,7 @@ const app = new Elysia();
 
 app.get("/", () => file("./index.html"));
 
-app.get("/cap.js", async ({ set }) => {
-  const main = await fs.readFile("../widget/src/src/cap.js", "utf-8");
-  const worker = await fs.readFile("../widget/src/src/worker.js", "utf-8");
-  const css = await processCSS();
-
-  const bundle = main
-    .replace("%%workerScript%%", JSON.stringify(worker))
-    .replace("%%capCSS%%", css);
-
-  set.headers = { "Content-Type": "application/javascript" };
-  return bundle;
-});
+app.get("/cap.js", () => file("../widget/src/cap.min.js"));
 
 app.get("/cap-floating.js", () => file("../widget/src/src/cap-floating.js"));
 

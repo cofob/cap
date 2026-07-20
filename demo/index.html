@@ -1,111 +1,458 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cap demo</title>
+    <meta name="color-scheme" content="light dark" />
+    <title>Cap Widget — пример</title>
 
     <style>
+      :root {
+        color-scheme: light;
+        --page-accent: #2563eb;
+        --page-accent-hover: #1d4ed8;
+        --page-canvas: #f5f7fb;
+        --page-surface: rgb(255 255 255 / 88%);
+        --page-text: #172033;
+        --page-muted: #667085;
+        --page-border: #d9deea;
+        --page-code: #eef2ff;
+        --page-shadow: 0 24px 70px rgb(23 32 51 / 12%);
+        font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --page-accent: #60a5fa;
+        --page-accent-hover: #93c5fd;
+        --page-canvas: #0f1218;
+        --page-surface: rgb(25 29 38 / 92%);
+        --page-text: #f5f7fb;
+        --page-muted: #a4adbd;
+        --page-border: #343b49;
+        --page-code: #20283a;
+        --page-shadow: 0 24px 80px rgb(0 0 0 / 35%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
-        padding: 0px;
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 15% 10%, rgb(37 99 235 / 12%), transparent 28rem),
+          radial-gradient(circle at 90% 85%, rgb(14 165 233 / 10%), transparent 26rem),
+          var(--page-canvas);
+        color: var(--page-text);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .page {
+        display: grid;
+        width: min(100% - 2rem, 68rem);
+        min-height: 100vh;
+        margin-inline: auto;
+        padding-block: clamp(2rem, 8vw, 6rem);
+        place-items: center;
+      }
+
+      .demo {
+        display: grid;
+        width: 100%;
+        overflow: hidden;
+        border: 1px solid var(--page-border);
+        border-radius: 1.5rem;
+        background: var(--page-surface);
+        box-shadow: var(--page-shadow);
+        grid-template-columns: minmax(0, 0.85fr) minmax(22rem, 1.15fr);
+        backdrop-filter: blur(18px);
+      }
+
+      .intro,
+      .example {
+        padding: clamp(1.5rem, 5vw, 3.5rem);
+      }
+
+      .intro {
+        display: flex;
+        min-height: 34rem;
+        flex-direction: column;
+        justify-content: space-between;
+        background: linear-gradient(145deg, rgb(37 99 235 / 14%), transparent 68%);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        width: fit-content;
+        border: 1px solid color-mix(in srgb, var(--page-accent) 35%, transparent);
+        border-radius: 999px;
+        color: var(--page-accent);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 0.4rem 0.7rem;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 12ch;
+        margin-block: 1.25rem 1rem;
+        font-size: clamp(2.5rem, 7vw, 4.8rem);
+        letter-spacing: -0.06em;
+        line-height: 0.95;
+      }
+
+      h2 {
+        font-size: 1.25rem;
+        letter-spacing: -0.02em;
+      }
+
+      .lead {
+        max-width: 32rem;
+        color: var(--page-muted);
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      .intro-footer,
+      .panel-heading,
+      .actions {
         display: flex;
         align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        margin: 0px;
-        flex-direction: column;
+        gap: 0.75rem;
       }
 
-      button {
-        margin-top: 10px;
-        font-family:
-          system,
-          -apple-system,
-          "BlinkMacSystemFont",
-          ".SFNSText-Regular",
-          "San Francisco",
-          "Roboto",
-          "Segoe UI",
-          "Helvetica Neue",
-          "Lucida Grande",
-          "Ubuntu",
-          "arial",
-          sans-serif;
-        background-color: rgba(20, 20, 25);
-        border: 1px solid rgba(60, 60, 70);
-        border-radius: 12px;
-        color: #ffffff;
+      .intro-footer,
+      .panel-heading {
+        justify-content: space-between;
+      }
+
+      .source-link {
+        color: var(--page-muted);
+        font-size: 0.875rem;
+        text-decoration-color: color-mix(in srgb, currentcolor 45%, transparent);
+        text-underline-offset: 0.25em;
+      }
+
+      .source-link:hover {
+        color: var(--page-accent);
+      }
+
+      .example {
+        border-inline-start: 1px solid var(--page-border);
+      }
+
+      .theme-toggle,
+      .action {
+        min-height: 2.75rem;
+        border: 1px solid var(--page-border);
+        border-radius: 0.75rem;
         cursor: pointer;
-        font-size: 14px;
-        padding: 12px 16px;
-        text-align: center;
-        transition:
-          transform 0.2s,
-          background-color 0.2s,
-          border-color 0.2s;
-        width: fit-content;
+        padding-inline: 1rem;
       }
 
-      button:focus {
-        outline: 0;
+      .theme-toggle {
+        min-width: 2.75rem;
+        background: transparent;
+        color: var(--page-text);
+        font-size: 1rem;
+        padding: 0;
       }
 
-      button:hover {
-        background-color: rgba(40, 40, 40);
-        border: 1px solid rgba(100, 100, 120);
+      .theme-toggle:hover,
+      .action--secondary:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
       }
 
-      button:active {
-        transform: scale(0.98);
+      .form {
+        display: grid;
+        gap: 1.35rem;
+        margin-block-start: 2rem;
       }
-      .source {
-        color: black;
-        font-family:
-          system,
-          -apple-system,
-          "BlinkMacSystemFont",
-          ".SFNSText-Regular",
-          "San Francisco",
-          "Roboto",
-          "Segoe UI",
-          "Helvetica Neue",
-          "Lucida Grande",
-          "Ubuntu",
-          "arial",
-          sans-serif;
-        margin-top: 10px;
-        font-size: 13px;
+
+      .field {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .field label {
+        font-size: 0.875rem;
+        font-weight: 650;
+      }
+
+      .field input {
+        width: 100%;
+        min-height: 3rem;
+        border: 1px solid var(--page-border);
+        border-radius: 0.75rem;
+        outline: none;
+        background: transparent;
+        color: var(--page-text);
+        padding-inline: 0.9rem;
+      }
+
+      .field input:focus {
+        border-color: var(--page-accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--page-accent) 18%, transparent);
+      }
+
+      cap-widget {
+        display: block;
+        --cf-color-accent: var(--page-accent);
+        --cf-color-focus: var(--page-accent);
+        --cf-radius-xl: 0.9rem;
+      }
+
+      .actions {
+        flex-wrap: wrap;
+      }
+
+      .action {
+        font-weight: 650;
+      }
+
+      .action--primary {
+        border-color: var(--page-accent);
+        background: var(--page-accent);
+        color: #fff;
+      }
+
+      .action--primary:hover {
+        border-color: var(--page-accent-hover);
+        background: var(--page-accent-hover);
+      }
+
+      .action--secondary {
+        background: transparent;
+        color: var(--page-text);
+      }
+
+      .status {
+        min-height: 1.5rem;
+        color: var(--page-muted);
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+
+      .result {
+        min-width: 0;
+        border: 1px solid var(--page-border);
+        border-radius: 0.9rem;
+        background: var(--page-code);
+        padding: 1rem;
+      }
+
+      .result[hidden] {
+        display: none;
+      }
+
+      .result strong {
+        display: block;
+        margin-block-end: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .result code {
+        display: block;
+        overflow: auto;
+        color: var(--page-text);
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.75rem;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+
+      button:focus-visible,
+      a:focus-visible {
+        outline: 3px solid color-mix(in srgb, var(--page-accent) 55%, transparent);
+        outline-offset: 3px;
+      }
+
+      @media (max-width: 48rem) {
+        .demo {
+          grid-template-columns: 1fr;
+        }
+
+        .intro {
+          min-height: auto;
+          gap: 3rem;
+        }
+
+        .example {
+          border-block-start: 1px solid var(--page-border);
+          border-inline-start: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
       }
     </style>
   </head>
+
   <body>
-    <cap-widget
-      id="cap"
-      onsolve="console.log(`Token: ${event.detail.token}`)"
-      data-cap-api-endpoint="/api/"
-      data-cap-hidden-field-name="test-endpoint"
-    ></cap-widget>
+    <main class="page">
+      <article class="demo">
+        <section class="intro" aria-labelledby="page-title">
+          <div>
+            <span class="eyebrow">Live example</span>
+            <h1 id="page-title">Cap Widget</h1>
+            <p class="lead">
+              Самостоятельная CAPTCHA с proof-of-work, нативной клавиатурной
+              навигацией и темизацией через токены <code>--cf-*</code>.
+            </p>
+          </div>
 
-    <cap-widget
-      id="floating"
-      onsolve="console.log(`Token: ${event.detail.token}`)"
-      data-cap-api-endpoint="/api/"
-    ></cap-widget>
+          <footer class="intro-footer">
+            <a
+              class="source-link"
+              href="https://github.com/cofob/cap"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub ↗
+            </a>
+            <span class="source-link">@cofob/design-system-css</span>
+          </footer>
+        </section>
 
-    <button data-cap-floating="#floating" data-cap-floating-position="bottom">
-      Trigger floating mode
-    </button>
+        <section class="example" aria-labelledby="example-title">
+          <header class="panel-heading">
+            <div>
+              <h2 id="example-title">Защищённая форма</h2>
+              <p class="status">Заполните форму и пройдите проверку.</p>
+            </div>
+            <button
+              class="theme-toggle"
+              id="theme-toggle"
+              type="button"
+              aria-label="Переключить тему"
+              aria-pressed="false"
+              title="Переключить тему"
+            >
+              ◐
+            </button>
+          </header>
 
-    <a href="https://github.com/tiagozip/cap/tree/main/demo" target="_blank" class="source">
-      Source code
-    </a>
+          <form class="form" id="demo-form">
+            <div class="field">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value="hello@example.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+
+            <cap-widget
+              id="cap"
+              data-cap-api-endpoint="/api/"
+              data-cap-hidden-field-name="cap-token"
+              data-cap-lang="ru"
+              required
+            ></cap-widget>
+
+            <div class="actions">
+              <button class="action action--primary" type="submit">
+                Отправить форму
+              </button>
+              <button class="action action--secondary" id="reset" type="button">
+                Сбросить
+              </button>
+            </div>
+
+            <p class="status" id="status" aria-live="polite">
+              Ожидание проверки.
+            </p>
+
+            <output class="result" id="result" for="cap" hidden>
+              <strong>Полученный токен</strong>
+              <code id="token"></code>
+            </output>
+          </form>
+        </section>
+      </article>
+    </main>
+
+    <script src="/cap.js"></script>
+    <script>
+      const root = document.documentElement;
+      const widget = document.getElementById("cap");
+      const form = document.getElementById("demo-form");
+      const status = document.getElementById("status");
+      const result = document.getElementById("result");
+      const token = document.getElementById("token");
+      const reset = document.getElementById("reset");
+      const themeToggle = document.getElementById("theme-toggle");
+
+      const setTheme = (theme) => {
+        root.dataset.theme = theme;
+        themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+      };
+
+      setTheme(
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light",
+      );
+
+      themeToggle.addEventListener("click", () => {
+        setTheme(root.dataset.theme === "dark" ? "light" : "dark");
+      });
+
+      widget.addEventListener("progress", (event) => {
+        const progress = Math.round(event.detail.progress ?? 0);
+        status.textContent = `Проверка: ${progress}%`;
+      });
+
+      widget.addEventListener("solve", (event) => {
+        status.textContent = "Проверка успешно завершена.";
+        token.textContent = event.detail.token;
+        result.hidden = false;
+      });
+
+      widget.addEventListener("error", (event) => {
+        status.textContent = event.detail.message || "Не удалось пройти проверку.";
+      });
+
+      widget.addEventListener("reset", () => {
+        status.textContent = "Ожидание проверки.";
+        token.textContent = "";
+        result.hidden = true;
+      });
+
+      widget.addEventListener("invalid", () => {
+        status.textContent = "Сначала подтвердите, что вы человек.";
+      });
+
+      reset.addEventListener("click", () => widget.reset());
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        status.textContent = "Форма готова к отправке на сервер.";
+      });
+    </script>
   </body>
-
-  <!--
-  <script src="https://cdn.jsdelivr.net/npm/@cap.js/widget"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@cap.js/widget/cap-floating.min.js"></script>
-  -->
-
-  <script src="/cap.js"></script>
-  <script src="/cap-floating.js"></script>
 </html>

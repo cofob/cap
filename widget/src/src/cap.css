@@ -31,7 +31,6 @@
 .cf-captcha {
   inline-size: 100%;
   margin: 0;
-  padding-inline-end: calc(var(--cf-space-4) + 2.75rem);
 }
 
 .cf-captcha[aria-disabled="true"] {
@@ -60,42 +59,9 @@
   animation: none;
 }
 
-.credits {
-  position: absolute;
-  inset-block-end: var(--cf-space-1);
-  inset-inline-end: var(--cf-space-1);
-  z-index: 2;
-  display: inline-flex !important;
-  min-inline-size: 1.5rem;
-  min-block-size: 1.5rem;
-  align-items: center;
-  justify-content: flex-end;
-  border-radius: var(--cf-radius-xs);
-  color: var(--cf-color-text-muted);
-  font-size: var(--cf-font-size-xs) !important;
-  line-height: 1;
-  opacity: 0.8 !important;
-  padding: var(--cf-space-1) var(--cf-space-1-5);
-  text-decoration: underline;
-  text-decoration-thickness: 0.08em;
-  text-underline-offset: 0.18em;
-}
-
-.cap-widget-shell .credits {
-  visibility: visible !important;
-  pointer-events: all !important;
-}
-
-.credits:hover {
-  color: var(--cf-color-accent-hover);
-  opacity: 1 !important;
-}
-
-.credits:focus-visible,
 .cap-troubleshoot-link:focus-visible {
   outline: 3px solid var(--cf-color-focus);
   outline-offset: 2px;
-  opacity: 1 !important;
 }
 
 .cap-troubleshoot-link {
@@ -170,13 +136,10 @@
     box-shadow: none;
   }
 
-  .credits,
   .cap-troubleshoot-link {
     color: LinkText;
-    opacity: 1 !important;
   }
 
-  .credits:focus-visible,
   .cap-troubleshoot-link:focus-visible {
     outline-color: Highlight;
   }

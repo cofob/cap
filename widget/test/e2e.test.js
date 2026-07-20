@@ -158,9 +158,7 @@ if (!SHOULD_RUN_E2E) {
             ...button.querySelectorAll("[data-captcha-label]"),
           ].map((label) => label.textContent),
           hasParts: root.querySelectorAll("[part]").length,
-          creditsAreSibling:
-            root.querySelector(".credits").parentElement ===
-            button.parentElement,
+          hasBranding: Boolean(root.querySelector(".credits")),
         };
       });
 
@@ -176,7 +174,7 @@ if (!SHOULD_RUN_E2E) {
           "Ошибка. Повторите.",
         ],
         hasParts: 0,
-        creditsAreSibling: true,
+        hasBranding: false,
       });
     }, 30_000);
 
@@ -324,7 +322,7 @@ if (!SHOULD_RUN_E2E) {
       });
     }, 30_000);
 
-    test("keeps troubleshooting and restores protected branding on retry", async () => {
+    test("keeps troubleshooting outside the button and retries from error", async () => {
       await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
       await page.waitForFunction(
         () =>
@@ -341,37 +339,23 @@ if (!SHOULD_RUN_E2E) {
         const button = root.querySelector(".cf-captcha");
         widget.updateUIBlocked("Verification failed", true);
         const troubleshoot = root.querySelector(".cap-troubleshoot-link");
-        const credits = root.querySelector(".credits");
         const presentation = {
           state: button.dataset.state,
           troubleshootingVisible: !troubleshoot.hidden,
           troubleshootingIsSibling:
             troubleshoot.parentElement === button.parentElement,
+          hasBranding: Boolean(root.querySelector(".credits")),
         };
 
-        credits.style.display = "none";
-        credits.textContent = "";
-        credits.remove();
         widget.solve();
-
-        const restoredCredits = root.querySelector(".credits");
-        return {
-          ...presentation,
-          creditsRestored: Boolean(restoredCredits),
-          creditsText: restoredCredits?.textContent,
-          creditsHref: restoredCredits?.getAttribute("href"),
-          creditsDisplay: restoredCredits?.style.display,
-        };
+        return presentation;
       });
 
       expect(beforeRetry).toEqual({
         state: "error",
         troubleshootingVisible: true,
         troubleshootingIsSibling: true,
-        creditsRestored: true,
-        creditsText: "Cap",
-        creditsHref: "https://trycap.dev",
-        creditsDisplay: "inline-flex",
+        hasBranding: false,
       });
 
       await page.waitForFunction(

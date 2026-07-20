@@ -47,6 +47,8 @@ describe("widget source structure", () => {
     expect(widgetSource).toMatch(/className = "cf-captcha"/);
     expect(widgetSource).toContain("cf-captcha__progress-value");
     expect(widgetSource).not.toMatch(/setAttribute\("part"/);
+    expect(widgetSource).not.toMatch(/className = "credits"/);
+    expect(widgetSource).not.toContain("Secured by Cap");
   });
 
   test("keeps determinate progress on the design-system ring", () => {

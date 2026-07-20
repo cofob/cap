@@ -81,6 +81,72 @@ jobs:
       - name: Run e2e (worker)
         working-directory: widget
         run: bun test test/e2e-worker.test.js
+      - name: Prepare widget release assets
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: widget
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p release
+          cp src/LICENSE release/
+          cp src/NOTICE release/
+          cp src/README.md release/
+          cp src/cap-floating.min.js release/
+          cp src/cap.compat.min.js release/
+          cp src/cap.d.ts release/
+          cp src/cap.min.js release/
+          cp src/package.json release/
+          cp src/wasm-hashes.min.js release/
+          npm pack ./src --pack-destination release
+          sha256sum release/* > release/SHA256SUMS
+      - name: Upload widget release assets
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: widget-release-${{ github.sha }}
+          path: widget/release
+          if-no-files-found: error
+          retention-days: 1
+
+  release-widget:
+    name: publish widget release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [core, wasm, widget, standalone]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: widget-release
+      cancel-in-progress: false
+    steps:
+      - name: Download widget release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: widget-release-${{ github.sha }}
+          path: release-assets
+      - name: Resolve release metadata
+        id: metadata
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./release-assets/package.json').version")
+          SHORT_SHA=${GITHUB_SHA::7}
+          TAG="widget-v${VERSION}-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          SHORT_SHA: ${{ steps.metadata.outputs.short_sha }}
+        run: |
+          gh release create "$RELEASE_TAG" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Cap Widget v${RELEASE_VERSION} (${SHORT_SHA})" \
+            --generate-notes \
+            --latest
 
   standalone:
     name: cap-standalone
