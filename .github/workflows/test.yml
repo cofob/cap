@@ -82,7 +82,9 @@ jobs:
         working-directory: widget
         run: bun test test/e2e-worker.test.js
       - name: Prepare widget release assets
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: >-
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+          github.ref == 'refs/heads/main'
         working-directory: widget
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -100,7 +102,9 @@ jobs:
           npm pack ./src --pack-destination release
           sha256sum release/* > release/SHA256SUMS
       - name: Upload widget release assets
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: >-
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+          github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: widget-release-${{ github.sha }}
@@ -110,7 +114,9 @@ jobs:
 
   release-widget:
     name: publish widget release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main'
     needs: [core, wasm, widget, standalone]
     runs-on: ubuntu-latest
     permissions:
